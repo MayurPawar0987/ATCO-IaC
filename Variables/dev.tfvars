@@ -43,7 +43,9 @@ subnets = {
   }
 }
 
-storage_account_name       = "statcodev001"
+storage_account_name            = "statcodev001"
+logic_app_storage_account_name  = "statcodevlogic001"
+sql_location                    = "eastus2"
 key_vault_name             = "kv-atco-dev-001"
 data_factory_name          = "adf-atco-dev"
 databricks_workspace_name  = "dbw-atco-dev"

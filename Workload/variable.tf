@@ -51,12 +51,22 @@ variable "databricks_managed_rg_name" {
   type = string
 }
 
+variable "sql_location" {
+  type        = string
+  description = "Azure region for SQL Server (use a region where SQL is available in your subscription)"
+}
+
 variable "sql_server_name" {
   type = string
 }
 
 variable "sql_database_name" {
   type = string
+}
+
+variable "logic_app_storage_account_name" {
+  type        = string
+  description = "Storage account name used exclusively by Logic App Standard (network open to allow platform provisioning)"
 }
 
 variable "logic_app_name" {

@@ -41,6 +41,18 @@ module "storage_account" {
   tags                     = var.tags
 }
 
+module "storage_account_logic_app" {
+  source = "../Modules/StorageAccount"
+
+  name                     = var.logic_app_storage_account_name
+  location                 = var.location
+  resource_group_name      = module.resource_group.name
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  network_default_action   = "Allow"
+  tags                     = var.tags
+}
+
 module "key_vault" {
   source = "../Modules/KeyVault"
 
@@ -78,7 +90,7 @@ module "sql_server" {
   source = "../Modules/SQLServer"
 
   name                = var.sql_server_name
-  location            = var.location
+  location            = var.sql_location
   resource_group_name = module.resource_group.name
   admin_username      = var.sql_admin_username
   admin_password      = var.sql_admin_password
@@ -92,8 +104,8 @@ module "logic_app" {
   name                       = var.logic_app_name
   location                   = var.location
   resource_group_name        = module.resource_group.name
-  storage_account_name       = module.storage_account.name
-  storage_account_access_key = module.storage_account.primary_access_key
+  storage_account_name       = module.storage_account_logic_app.name
+  storage_account_access_key = module.storage_account_logic_app.primary_access_key
   vnet_integration_subnet_id = module.virtual_network.subnet_ids["snet-integration"]
   tags                       = var.tags
 }
