@@ -1,14 +1,15 @@
-environment = "prod"
-location    = "eastus"
 project     = "atco"
+bu          = "sbx"
+environment = "uat"
+location    = "canadacentral"
+sql_location = "canadacentral"
 
 tags = {
-  Environment = "prod"
-  Project     = "atco"
-  ManagedBy   = "terraform"
+  Environment  = "uat"
+  BusinessUnit = "sbx"
+  Project      = "atco"
+  ManagedBy    = "terraform"
 }
-
-resource_group_name = "rg-atco-prod"
 
 vnet_address_space = ["10.40.0.0/16"]
 subnets = {
@@ -24,7 +25,6 @@ subnets = {
   }
   "AzureFirewallSubnet"    = { address_prefixes = ["10.40.4.0/26"], delegation = null }
   "snet-private-endpoints" = { address_prefixes = ["10.40.5.0/24"], delegation = null }
-  "snet-agent"             = { address_prefixes = ["10.40.6.0/24"], delegation = null }
   "snet-databricks-public" = {
     address_prefixes = ["10.40.7.0/24"]
     delegation = {
@@ -43,14 +43,4 @@ subnets = {
   }
 }
 
-storage_account_name            = "statcoprod001"
-logic_app_storage_account_name  = "statcoprodlogic001"
-sql_location                    = "westus2"
-key_vault_name             = "kv-atco-prod-001"
-data_factory_name          = "adf-atco-prod"
-databricks_workspace_name  = "dbw-atco-prod"
-databricks_managed_rg_name = "rg-atco-prod-databricks-managed"
-sql_server_name            = "sql-atco-prod"
-sql_database_name          = "sqldb-atco-prod"
-logic_app_name             = "logic-atco-prod"
-vm_name                    = "vm-atco-prod-agent"
+logic_app_sku = "WS2"

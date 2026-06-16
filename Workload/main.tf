@@ -1,15 +1,18 @@
-module "resource_group" {
-  source = "../Modules/ResourceGroup"
+locals {
+  prefix       = "${var.project}-${var.bu}-${var.environment}"
+  short_prefix = "${var.project}${var.bu}${var.environment}"
+}
 
-  name     = var.resource_group_name
+module "resource_group" {
+  source   = "../Modules/ResourceGroup"
+  name     = "rg-${local.prefix}"
   location = var.location
   tags     = var.tags
 }
 
 module "virtual_network" {
-  source = "../Modules/VirtualNetwork"
-
-  name                = "vnet-${var.project}-${var.environment}"
+  source              = "../Modules/VirtualNetwork"
+  name                = "vnet-${local.prefix}"
   location            = var.location
   resource_group_name = module.resource_group.name
   address_space       = var.vnet_address_space
@@ -18,9 +21,8 @@ module "virtual_network" {
 }
 
 module "nsg_databricks" {
-  source = "../Modules/NetworkSecurityGroup"
-
-  name                = "nsg-${var.project}-${var.environment}-databricks"
+  source              = "../Modules/NetworkSecurityGroup"
+  name                = "nsg-${local.prefix}-databricks"
   location            = var.location
   resource_group_name = module.resource_group.name
   subnet_ids = {
@@ -31,9 +33,8 @@ module "nsg_databricks" {
 }
 
 module "storage_account" {
-  source = "../Modules/StorageAccount"
-
-  name                     = var.storage_account_name
+  source                   = "../Modules/StorageAccount"
+  name                     = "s${local.short_prefix}001"
   location                 = var.location
   resource_group_name      = module.resource_group.name
   account_tier             = "Standard"
@@ -42,9 +43,8 @@ module "storage_account" {
 }
 
 module "storage_account_logic_app" {
-  source = "../Modules/StorageAccount"
-
-  name                     = var.logic_app_storage_account_name
+  source                   = "../Modules/StorageAccount"
+  name                     = "s${local.short_prefix}la001"
   location                 = var.location
   resource_group_name      = module.resource_group.name
   account_tier             = "Standard"
@@ -54,30 +54,27 @@ module "storage_account_logic_app" {
 }
 
 module "key_vault" {
-  source = "../Modules/KeyVault"
-
-  name                = var.key_vault_name
+  source              = "../Modules/KeyVault"
+  name                = "kv-${local.prefix}-001"
   location            = var.location
   resource_group_name = module.resource_group.name
   tags                = var.tags
 }
 
 module "data_factory" {
-  source = "../Modules/DataFactory"
-
-  name                = var.data_factory_name
+  source              = "../Modules/DataFactory"
+  name                = "adf-${local.prefix}"
   location            = var.location
   resource_group_name = module.resource_group.name
   tags                = var.tags
 }
 
 module "databricks" {
-  source = "../Modules/Databricks"
-
-  name                              = var.databricks_workspace_name
+  source                            = "../Modules/Databricks"
+  name                              = "dbw-${local.prefix}"
   location                          = var.location
   resource_group_name               = module.resource_group.name
-  managed_resource_group_name       = var.databricks_managed_rg_name
+  managed_resource_group_name       = "rg-${local.prefix}-dbr"
   virtual_network_id                = module.virtual_network.id
   private_subnet_name               = "snet-databricks-private"
   public_subnet_name                = "snet-databricks-public"
@@ -87,44 +84,30 @@ module "databricks" {
 }
 
 module "sql_server" {
-  source = "../Modules/SQLServer"
-
-  name                = var.sql_server_name
+  source              = "../Modules/SQLServer"
+  name                = "sql-${local.prefix}"
   location            = var.sql_location
   resource_group_name = module.resource_group.name
   admin_username      = var.sql_admin_username
   admin_password      = var.sql_admin_password
-  database_name       = var.sql_database_name
+  database_name       = "sqldb-${local.prefix}"
   tags                = var.tags
 }
 
 module "logic_app" {
-  source = "../Modules/LogicApp"
-
-  name                       = var.logic_app_name
+  source                     = "../Modules/LogicApp"
+  name                       = "logic-${local.prefix}"
   location                   = var.location
   resource_group_name        = module.resource_group.name
   storage_account_name       = module.storage_account_logic_app.name
   storage_account_access_key = module.storage_account_logic_app.primary_access_key
   vnet_integration_subnet_id = module.virtual_network.subnet_ids["snet-integration"]
+  sku_name                   = var.logic_app_sku
   tags                       = var.tags
 }
 
-module "virtual_machine" {
-  source = "../Modules/VirtualMachine"
-
-  name                = var.vm_name
-  location            = var.location
-  resource_group_name = module.resource_group.name
-  subnet_id           = module.virtual_network.subnet_ids["snet-agent"]
-  admin_username      = var.vm_admin_username
-  admin_password      = var.vm_admin_password
-  tags                = var.tags
-}
-
 module "private_dns" {
-  source = "../Modules/DNS"
-
+  source              = "../Modules/DNS"
   resource_group_name = module.resource_group.name
   virtual_network_id  = module.virtual_network.id
   private_dns_zones = {
@@ -139,9 +122,8 @@ module "private_dns" {
 }
 
 module "pe_storage" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.storage_account_name}-blob"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-storage"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]
@@ -152,9 +134,8 @@ module "pe_storage" {
 }
 
 module "pe_key_vault" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.key_vault_name}-vault"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-kv"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]
@@ -165,9 +146,8 @@ module "pe_key_vault" {
 }
 
 module "pe_data_factory" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.data_factory_name}-df"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-adf"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]
@@ -178,9 +158,8 @@ module "pe_data_factory" {
 }
 
 module "pe_databricks" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.databricks_workspace_name}-ui"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-dbw"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]
@@ -191,9 +170,8 @@ module "pe_databricks" {
 }
 
 module "pe_sql" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.sql_server_name}-sql"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-sql"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]
@@ -204,9 +182,8 @@ module "pe_sql" {
 }
 
 module "pe_logic_app" {
-  source = "../Modules/PrivateEndpoint"
-
-  name                           = "pe-${var.logic_app_name}-sites"
+  source                         = "../Modules/PrivateEndpoint"
+  name                           = "pe-${local.prefix}-logic"
   location                       = var.location
   resource_group_name            = module.resource_group.name
   subnet_id                      = module.virtual_network.subnet_ids["snet-private-endpoints"]

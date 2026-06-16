@@ -3,6 +3,17 @@ name: Terraform
 on:
   workflow_dispatch:
     inputs:
+      business_unit:
+        description: 'Business unit'
+        required: true
+        type: choice
+        options:
+          - rm
+          - utl
+          - asc
+          - sbx
+          - cs
+          - ery
       environment:
         description: 'Target environment'
         required: true
@@ -19,7 +30,7 @@ env:
 
 jobs:
   plan:
-    name: Terraform Plan (${{ github.event.inputs.environment }})
+    name: Terraform Plan (${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }})
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
 
@@ -45,7 +56,7 @@ jobs:
             -backend-config="resource_group_name=${{ secrets.BACKEND_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.BACKEND_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ secrets.BACKEND_CONTAINER }}" \
-            -backend-config="key=${{ github.event.inputs.environment }}.terraform.tfstate"
+            -backend-config="key=${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }}.terraform.tfstate"
 
       - name: Terraform Validate
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -55,9 +66,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform plan -input=false \
-            -var-file="../Variables/${{ github.event.inputs.environment }}.tfvars" \
-            -var="vm_admin_username=${{ secrets.VM_ADMIN_USERNAME }}" \
-            -var="vm_admin_password=${{ secrets.VM_ADMIN_PASSWORD }}" \
+            -var-file="../Variables/${{ github.event.inputs.business_unit }}/${{ github.event.inputs.environment }}.tfvars" \
             -var="sql_admin_username=${{ secrets.SQL_ADMIN_USERNAME }}" \
             -var="sql_admin_password=${{ secrets.SQL_ADMIN_PASSWORD }}" \
             -out=tfplan
@@ -65,12 +74,12 @@ jobs:
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-${{ github.event.inputs.environment }}
+          name: tfplan-${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }}
           path: ${{ env.TF_WORKING_DIR }}/tfplan
           retention-days: 1
 
   apply:
-    name: Terraform Apply (${{ github.event.inputs.environment }})
+    name: Terraform Apply (${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }})
     runs-on: ubuntu-latest
     needs: plan
     environment: ${{ github.event.inputs.environment }}
@@ -97,12 +106,12 @@ jobs:
             -backend-config="resource_group_name=${{ secrets.BACKEND_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.BACKEND_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ secrets.BACKEND_CONTAINER }}" \
-            -backend-config="key=${{ github.event.inputs.environment }}.terraform.tfstate"
+            -backend-config="key=${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }}.terraform.tfstate"
 
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-${{ github.event.inputs.environment }}
+          name: tfplan-${{ github.event.inputs.business_unit }}-${{ github.event.inputs.environment }}
           path: ${{ env.TF_WORKING_DIR }}
 
       - name: Terraform Apply
